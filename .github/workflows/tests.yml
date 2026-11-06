@@ -31,6 +31,12 @@ jobs:
           python -S -c 'import sys; sys.path.insert(0,"console"); import worker, config_service'
       - name: Core and console fixtures (no production AD or mailbox access)
         run: |
-          for test in core/tests/test_*.py console/tests/test_*.py; do
+          # Exclusion and archive ownership guards require root-owned ancestors.
+          # This is an ephemeral GitHub VM; every mailbox is a temporary fixture.
+          sudo install -d -m 0700 /var/lib/lifecycle-fixture-tests
+          for test in core/tests/test_*.py; do
+            sudo env LIFECYCLE_TEST_TMP=/var/lib/lifecycle-fixture-tests "$(command -v python)" "$test"
+          done
+          for test in console/tests/test_*.py; do
             python "$test"
           done
