@@ -33,7 +33,7 @@ def write_lf(path, text):
 @unittest.skipUnless(BASH, "Bash executable unavailable")
 class NormalTests(unittest.TestCase):
     def setUp(self):
-        scratch = PACKAGE.parent / "test-scratch"
+        scratch = Path(os.environ.get("LIFECYCLE_TEST_TMP", PACKAGE.parent / "test-scratch"))
         scratch.mkdir(exist_ok=True)
         self.tmp = tempfile.TemporaryDirectory(dir=scratch)
         self.base = Path(self.tmp.name).resolve()
@@ -85,6 +85,7 @@ class NormalTests(unittest.TestCase):
         # as a Windows path ensures it builds a correct POSIX search path.
         self.env["PATH"] = str(self.bin) + os.pathsep + str(Path(BASH).parent) + os.pathsep + self.env.get("PATH", "")
         self.env["CONFIG_FILE"] = shell_path(self.config)
+        self.env["LIFECYCLE_SETTINGS_LOCK"] = shell_path(self.base / "settings.lock")
         self.env["TEST_LDIF"] = shell_path(self.ldif)
         self.env["TEST_FAIL_LDAP"] = "0"
 

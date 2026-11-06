@@ -43,7 +43,7 @@ class FakeAD:
 
 class LegacyTests(unittest.TestCase):
     def setUp(self):
-        scratch = Path(__file__).resolve().parents[2] / "test-scratch"
+        scratch = Path(os.environ.get("LIFECYCLE_TEST_TMP", Path(__file__).resolve().parents[2] / "test-scratch"))
         scratch.mkdir(exist_ok=True)
         self.tmp = tempfile.TemporaryDirectory(dir=scratch)
         self.base = Path(self.tmp.name).resolve()

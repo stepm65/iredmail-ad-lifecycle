@@ -63,6 +63,7 @@ if new or args.set_password:
         raise SystemExit("Passwords differ or too short / Пароли различаются или слишком короткие")
     c["password_hash"] = generate_password_hash(password, method="pbkdf2:sha256:600000")
 path.parent.mkdir(parents=True, exist_ok=True)
+c['config_revision'] = secrets.token_hex(16)
 atomic_json(path, c)
 os.chown(path, 0, grp.getgrnam("lc-web").gr_gid)
 print("Настройки сохранены. Пароль AD не используется. Пароль/разрешения применяются без перезапуска. После изменения URL/путей перезапустите службы консоли, дождавшись заданий.")

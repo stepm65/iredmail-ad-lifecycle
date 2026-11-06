@@ -19,6 +19,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.exceptions import SecurityError
 from werkzeug.security import check_password_hash
 from password_service import request_change
+from config_service import request_config
+from config_model import SCHEMA, BOUNDS
 from common import atomic_json, job_id, read_json, read_regular, result, rows, validate_request
 
 LABELS = {"report": "Штатный отчёт", "inventory": "Legacy-инвентаризация",
@@ -75,6 +77,7 @@ def create_app(settings=None):
             c["maintenance"] = fresh.get("maintenance", False)
             c["allow_live"] = fresh.get("allow_live", False)
             c["allow_delete"] = fresh.get("allow_delete", False)
+            c["config_revision"] = fresh.get("config_revision", "")
             version = c["password_hash"][-32:]
         if not request.is_secure:
             abort(400, "Используйте HTTPS через настроенный reverse proxy")
@@ -139,6 +142,7 @@ def create_app(settings=None):
     def enqueue(operation, **extra):
         ident = uuid.uuid4().hex
         data = dict(id=ident, operation=operation, created=int(time.time()), actor=c["username"], **extra)
+        data['config_revision'] = c.get('config_revision', '')
         validate_request(data, c["allow_live"], delete=c.get("allow_delete", False))
         if len(json.dumps(data, ensure_ascii=False).encode("utf-8")) > 65536:
             raise ValueError("Слишком большой список; уменьшите пакет")
@@ -231,6 +235,51 @@ def create_app(settings=None):
             except (ValueError, OSError):
                 flash("Пароль не изменён: проверьте текущий пароль, повтор и длину 12–256 символов. После 5 неудачных попыток подождите 10 минут. Если служба недоступна, используйте сброс через SSH.", "error")
         return render_template("account.html")
+
+    @app.route('/settings', methods=['GET','POST'])
+    @login_required
+    def settings_page():
+        view = None
+        outcome = None
+        submitted = None
+        try:
+            if request.method == 'POST':
+                action = request.form.get('action', '')
+                if action not in ('validate','test','save','restore','timer-on','timer-off'):
+                    abort(400)
+                common = dict(current=request.form.get('current',''), revision=request.form.get('revision',''))
+                if action in ('validate','test','save'):
+                    submitted = {key:request.form.get(key,'') for key in SCHEMA}
+                    if action == 'save' and request.form.get('confirm') != 'СОХРАНИТЬ':
+                        raise ValueError('Для сохранения введите СОХРАНИТЬ и пароль консоли')
+                    outcome = request_config('config-'+action, **common, values=submitted,
+                                             ldap_password=request.form.get('ldap_password',''),
+                                             allow_live=request.form.get('allow_live')=='yes',
+                                             allow_delete=request.form.get('allow_delete')=='yes')
+                elif action == 'restore':
+                    if request.form.get('confirm') != 'ВОССТАНОВИТЬ НАСТРОЙКИ':
+                        raise ValueError('Введите ВОССТАНОВИТЬ НАСТРОЙКИ и пароль консоли')
+                    outcome = request_config('config-restore', **common, backup=request.form.get('backup',''))
+                else:
+                    phrase='ВКЛЮЧИТЬ' if action=='timer-on' else 'ВЫКЛЮЧИТЬ'
+                    if request.form.get('confirm') != phrase:raise ValueError('Введите '+phrase+' и пароль консоли')
+                    outcome = request_config('config-timer', **common, enabled=action=='timer-on')
+                if action in ('save','restore','timer-on','timer-off'):
+                    flash('Настройки сохранены. Старые отчёты и проверки операций нужно создать заново.' if action in ('save','restore') else 'Настройка таймера применена.', 'success')
+                    return redirect(url_for('settings_page'))
+            view = request_config('config-read')
+            if submitted:
+                view['values'] = submitted
+                view['allow_live'] = request.form.get('allow_live')=='yes'
+                view['allow_delete'] = request.form.get('allow_delete')=='yes'
+        except (ValueError, OSError) as exc:
+            flash(str(exc) if isinstance(exc,ValueError) else 'Служба настроек недоступна или занята. Дождитесь задания и повторите.', 'error')
+            if view is None:
+                try:
+                    view=request_config('config-read')
+                    if submitted:view['values']=submitted
+                except (ValueError,OSError):pass
+        return render_template('settings.html', view=view, fields=SCHEMA.values(), bounds=BOUNDS, outcome=outcome)
 
     @app.get("/delete-selection")
     @login_required

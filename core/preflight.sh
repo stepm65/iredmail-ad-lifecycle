@@ -6,7 +6,16 @@ set -Eeuo pipefail
 CONFIG="${1:-/etc/iredmail-ad-lifecycle.conf}"
 [[ -r "$CONFIG" ]] || { echo "Cannot read config: $CONFIG" >&2; exit 1; }
 # shellcheck source=/dev/null
+exec 8>"${LIFECYCLE_SETTINGS_LOCK:-/run/iredmail-lifecycle-settings.lock}"
+flock -s -n 8 || { echo 'Settings are being changed'; exit 1; }
+[[ ! -e /etc/iredmail-lifecycle-web/config-history/pending.json ]] || exit 1
 source "$CONFIG"
+if [[ -e /etc/iredmail-lifecycle-web/core-overrides.conf ]]; then
+    [[ ! -L /etc/iredmail-lifecycle-web/core-overrides.conf ]] || exit 1
+    [[ "$(stat -c %u /etc/iredmail-lifecycle-web/core-overrides.conf)" == 0 ]] || exit 1
+    [[ "$(stat -c %a /etc/iredmail-lifecycle-web/core-overrides.conf)" == 600 ]] || exit 1
+    source /etc/iredmail-lifecycle-web/core-overrides.conf
+fi
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT

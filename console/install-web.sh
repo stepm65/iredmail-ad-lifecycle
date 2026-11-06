@@ -35,16 +35,16 @@ if systemctl is-active --quiet iredmail-lifecycle-web.service || systemctl is-ac
   echo 'Stop console services after pending jobs finish before reinstalling / Дождитесь заданий и остановите службы консоли перед обновлением'; exit 1
 fi
 [[ -x /usr/local/sbin/iredmail-ad-lifecycle && -r /usr/local/lib/iredmail-ad-lifecycle/legacy.py ]] || {
-  echo 'Install lifecycle 1.4.0 first / Сначала установите lifecycle 1.4.0'; exit 1; }
+  echo 'Install lifecycle 1.5.0 first / Сначала установите lifecycle 1.5.0'; exit 1; }
 python3 -c 'import sys; assert sys.version_info >= (3, 10), "Python 3.10+ required"'
-python3 -c 'import runpy; assert runpy.run_path("/usr/local/lib/iredmail-ad-lifecycle/legacy.py")["VERSION"] == "1.4.0", "This addon requires lifecycle 1.4.0"'
-[[ -r /usr/local/lib/iredmail-ad-lifecycle/manage.py ]] || { echo 'Missing manage.py: reinstall lifecycle 1.4.0'; exit 1; }
+python3 -c 'import runpy; assert runpy.run_path("/usr/local/lib/iredmail-ad-lifecycle/legacy.py")["VERSION"] == "1.5.0", "This addon requires lifecycle 1.5.0"'
+[[ -r /usr/local/lib/iredmail-ad-lifecycle/manage.py ]] || { echo 'Missing manage.py: reinstall lifecycle 1.5.0'; exit 1; }
 for cmd in python3 systemctl install getent useradd groupadd; do command -v "$cmd" >/dev/null; done
 getent group lc-web >/dev/null || groupadd --system lc-web
 id lc-web >/dev/null 2>&1 || useradd --system --gid lc-web --home-dir /nonexistent --shell /usr/sbin/nologin lc-web
 DEST=/opt/iredmail-lifecycle-web
 install -d -m 0755 -o root -g root "$DEST" "$DEST/templates" "$DEST/static"
-for file in common.py app.py worker.py configure.py password_service.py connect-web.py requirements.txt LICENSE NOTICE; do install -m 0644 -o root -g root "$SRC/$file" "$DEST/$file"; done
+for file in common.py app.py worker.py configure.py config_model.py config_service.py password_service.py connect-web.py requirements.txt LICENSE NOTICE; do install -m 0644 -o root -g root "$SRC/$file" "$DEST/$file"; done
 install -m 0750 -o root -g root "$SRC/connect-web.sh" "$DEST/connect-web.sh"
 install -m 0750 -o root -g root "$SRC/reset-console-password.sh" "$DEST/reset-console-password.sh"
 for file in "$SRC"/templates/*.html; do install -m 0644 -o root -g root "$file" "$DEST/templates/"; done

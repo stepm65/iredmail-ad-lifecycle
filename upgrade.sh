@@ -31,6 +31,9 @@ finish() {
 }
 trap finish EXIT
 ((WEB_ACTIVE == 0)) || systemctl stop iredmail-lifecycle-web.service
+exec 8>/run/iredmail-lifecycle-settings.lock
+flock -n 8 || { echo 'Настройки или почта сейчас обрабатываются. Дождитесь завершения.'; exit 1; }
+[[ ! -e /etc/iredmail-lifecycle-web/config-history/pending.json ]] || { echo 'Сначала требуется восстановление настроек службой worker; обновление остановлено.'; exit 1; }
 # With frontend stopped no new HTTP jobs can enter. Worker writes running state
 # before removing inbox entry, so checking inbox then running covers claim races.
 python3 - <<'PY'
@@ -49,6 +52,7 @@ LOCK_FILE="$(bash -c 'source /etc/iredmail-ad-lifecycle.conf; printf "%s" "${LOC
 exec 9>"$LOCK_FILE"
 flock -n 9 || { echo 'Основной lifecycle выполняется. Дождитесь завершения и повторите.'; exit 1; }
 ((WORKER_ACTIVE == 0)) || systemctl stop iredmail-lifecycle-worker.service
+flock -u 8
 BACKUP="/var/backups/iredmail-lifecycle-upgrade/$(date +%Y%m%d-%H%M%S)-$$"
 install -d -m 0700 -o root -g root "$BACKUP"
 FILES=()
@@ -83,4 +87,4 @@ URL="$(python3 -c 'import json; print(json.load(open("/etc/iredmail-lifecycle-we
 python3 /opt/iredmail-lifecycle-web/connect-web.py --url "$URL" "$@"
 python3 "$MAINTENANCE_SCRIPT" no
 systemctl restart iredmail-lifecycle-worker.service iredmail-lifecycle-web.service
-echo 'Обновлены lifecycle 1.4.0 и веб-консоль 0.4.0. Архивы, состояния и исключения сохранены.'
+echo 'Обновлены lifecycle 1.5.0 и веб-консоль 0.5.0. Архивы, состояния и исключения сохранены.'

@@ -72,6 +72,10 @@ def validate_request(data, live=False, delete=False):
     if not isinstance(operation, str) or operation not in OPS:
         raise ValueError("Операция не разрешена")
     fields = {"id", "operation", "created", "actor"}
+    if "config_revision" in data:
+        fields.add("config_revision")
+        if data["config_revision"] != "":
+            job_id(data["config_revision"])
     if operation == "delete-batch-preview":
         fields |= {"report", "emails"}
         job_id(data.get("report"))

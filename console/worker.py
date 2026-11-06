@@ -48,6 +48,8 @@ class Worker:
 
     def prerequisite(self, ident, operation):
         meta = result(self.store, ident)
+        if meta.get('config_revision', '') != self.c.get('config_revision', ''):
+            raise ValueError('Настройки изменены: создайте новый отчёт и новую проверку операции')
         if meta.get("operation") != operation or meta.get("status") != "done":
             raise ValueError("Сначала завершите " + operation + " без ошибок")
         return self.store / ident, meta
@@ -60,8 +62,8 @@ class Worker:
             spec = importlib.util.spec_from_file_location("lifecycle_helper", c["helper"])
             helper = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(helper)
-            if helper.VERSION != "1.4.0":
-                raise ValueError("Для восстановления/исключений установите lifecycle 1.4.0")
+            if helper.VERSION != "1.5.0":
+                raise ValueError("Для настройки через веб установите lifecycle 1.5.0")
             canonical = helper.email_value
         else:
             canonical = lambda value: value.strip().lower()
@@ -215,6 +217,26 @@ class Worker:
             (folder / target).write_bytes(read_regular(path))
 
     def handle(self, path):
+        if not self.enforce:
+            return self._handle(path)
+        import fcntl
+        from config_service import LOCK_PATH, PENDING
+        with open(LOCK_PATH, 'a') as config_lock:
+            os.chmod(LOCK_PATH, 0o600)
+            try:
+                fcntl.flock(config_lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return  # Broker owns the lock; leave the job queued.
+            if Path(PENDING).exists():
+                return
+            if self.config_path:
+                fresh = read_json(self.config_path)
+                for name in ('allow_live','allow_delete','maintenance','config_revision'):
+                    self.c[name] = fresh.get(name, '' if name=='config_revision' else False)
+            if not self.c.get('maintenance'):
+                return self._handle(path)
+
+    def _handle(self, path):
         path = Path(path)
         if not ID.fullmatch(path.stem) or path.suffix != ".json":
             return
@@ -234,11 +256,14 @@ class Worker:
             return
         folder.mkdir(mode=0o750)
         meta = {k: data[k] for k in ("id", "operation", "created", "actor")}
+        meta['config_revision'] = data.get('config_revision', '')
         meta.update(status="running", started=int(time.time()))
         atomic_json(folder / "request.json", data)
         atomic_json(folder / "result.json", meta)
         path.unlink()
         try:
+            if data.get('config_revision','') != self.c.get('config_revision',''):
+                raise ValueError('Настройки изменены после постановки задания: обновите отчёт и повторите')
             command = self.prepare(data, folder, meta)
             if data["operation"] in ("archive", "restore", "delete", "delete-batch"):
                 approved = self.store / data["preview"]

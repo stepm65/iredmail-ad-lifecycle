@@ -46,12 +46,16 @@ def change(path, data):
 def request_change(current, new):
     data = dict(current=current, new=new)
     validate(data)
+    request_rpc(data)
+
+
+def request_rpc(data, timeout=10):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-        client.settimeout(10)
+        client.settimeout(timeout)
         client.connect(SOCKET_PATH)
         client.sendall(json.dumps(data, ensure_ascii=False).encode('utf-8') + b'\n')
         response = b''
-        while b'\n' not in response and len(response) <= 4096:
+        while b'\n' not in response and len(response) <= 65536:
             chunk = client.recv(4096)
             if not chunk:
                 raise ValueError('Служба смены пароля не ответила')
@@ -59,6 +63,7 @@ def request_change(current, new):
     result = json.loads(response.decode('utf-8'))
     if result.get('ok') is not True:
         raise ValueError(result.get('error', 'Пароль не изменён'))
+    return result.get('data', {})
 
 
 def serve(config):
@@ -66,6 +71,12 @@ def serve(config):
     import pwd
     from worker import trusted
     trusted(config)
+    from config_service import ConfigManager
+    manager = ConfigManager(config)
+    with open(LOCK_PATH, 'a') as recovery_lock:
+        os.chmod(LOCK_PATH, 0o600)
+        fcntl.flock(recovery_lock, fcntl.LOCK_EX)
+        manager.recover()
     parent = Path(SOCKET_PATH).parent
     trusted(parent)
     allowed_uid = pwd.getpwnam('lc-web').pw_uid
@@ -92,25 +103,31 @@ def serve(config):
                     if len(failures) >= 5:
                         raise ValueError('Слишком много попыток; повторите через 10 минут')
                     raw = b''
-                    while b'\n' not in raw and len(raw) <= 4096:
+                    while b'\n' not in raw and len(raw) <= 65536:
                         chunk = connection.recv(4096)
                         if not chunk:
                             raise ValueError('Пустой запрос')
                         raw += chunk
-                    if len(raw) > 4096:
+                    if len(raw) > 65536:
                         raise ValueError('Запрос слишком большой')
                     data = json.loads(raw.decode('utf-8'))
                     with open(LOCK_PATH, 'a') as lock:
                         os.chmod(LOCK_PATH, 0o600)
-                        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        mode = fcntl.LOCK_SH if isinstance(data, dict) and data.get('operation') == 'config-read' else fcntl.LOCK_EX
+                        fcntl.flock(lock, mode | fcntl.LOCK_NB)
                         try:
-                            change(config, data)
+                            if isinstance(data, dict) and 'operation' in data:
+                                output = manager.dispatch(data)
+                            else:
+                                change(config, data)
+                                output = {}
                         except ValueError:
                             failures.append(now)
                             raise
-                    failures.clear()
-                    print('PASSWORD CHANGED: local console account', flush=True)
-                    response = dict(ok=True)
+                    if data.get('operation') != 'config-read':
+                        failures.clear()
+                        print('ADMIN OPERATION: ' + data.get('operation', 'password-change'), flush=True)
+                    response = dict(ok=True, data=output)
                 except (ValueError, OSError) as exc:
                     # Never log the request, plaintext password, or exception repr.
                     message = str(exc) if isinstance(exc, ValueError) else 'Служба занята или недоступна; повторите позже'

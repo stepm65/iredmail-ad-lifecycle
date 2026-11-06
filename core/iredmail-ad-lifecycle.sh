@@ -301,7 +301,18 @@ write_report_row() {
 # -----------------------------------------------------------------------------
 [[ -r "$CONFIG_FILE" ]] || { echo "ERROR: cannot read $CONFIG_FILE" >&2; exit 1; }
 # shellcheck source=/dev/null
+# Hold a stable shared lock BEFORE reading either configuration file. The web
+# broker takes it exclusively for changes; pending recovery blocks all mutations.
+exec 8>"${LIFECYCLE_SETTINGS_LOCK:-/run/iredmail-lifecycle-settings.lock}"
+flock -s -n 8 || { echo 'Settings are being changed; retry later' >&2; exit 1; }
+[[ ! -e /etc/iredmail-lifecycle-web/config-history/pending.json ]] || { echo 'Settings recovery required; no processing performed' >&2; exit 1; }
 source "$CONFIG_FILE"
+if [[ -e /etc/iredmail-lifecycle-web/core-overrides.conf ]]; then
+    [[ ! -L /etc/iredmail-lifecycle-web/core-overrides.conf ]] || exit 1
+    [[ "$(stat -c %u /etc/iredmail-lifecycle-web/core-overrides.conf)" == 0 ]] || exit 1
+    [[ "$(stat -c %a /etc/iredmail-lifecycle-web/core-overrides.conf)" == 600 ]] || exit 1
+    source /etc/iredmail-lifecycle-web/core-overrides.conf
+fi
 
 : "${LDAP_URI:?LDAP_URI is required}"
 : "${BIND_DN:?BIND_DN is required}"

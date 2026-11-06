@@ -22,7 +22,7 @@ import time
 import uuid
 import unicodedata
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 SCHEMA_VERSION = "1.1"  # Existing reviewed inventories remain compatible.
 FIELDS = ["schema_version", "inventory_id", "generated_at_epoch", "email",
           "size_bytes", "mailbox_path", "latest_mtime_epoch", "latest_mtime_utc",
