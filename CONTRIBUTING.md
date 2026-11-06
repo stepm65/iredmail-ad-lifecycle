@@ -18,9 +18,10 @@ python console/tests/test_connect.py
 python console/tests/test_console.py
 python console/tests/test_admin.py
 python console/tests/test_batch.py
+python console/tests/test_settings.py
 ```
 
-The normal/CLI fixture in `core/tests/test_normal.py` additionally needs Bash and its fixture dependencies. Read its platform assumptions before running. Tests use temporary trees and mocked process/AD boundaries; passing them does not validate production LDAP, systemd, Nginx/Apache, Linux ownership/ACLs or a server upgrade.
+The normal/CLI fixture in `core/tests/test_normal.py` additionally needs Bash. On Linux, core exclusion/restore fixtures require root-owned ancestors without group/world write; run them only on an isolated test VM with `LIFECYCLE_TEST_TMP` pointing to a dedicated root-owned directory under `/var/lib`. The CI workflow demonstrates this setup on ephemeral Ubuntu 22.04/24.04 runners. Do not run fixture tests with production configuration. On Windows a short writable `LIFECYCLE_TEST_TMP` avoids MAX_PATH limits. The new settings suite also exercises actual Linux flock and Unix peer credentials, while mocking AD/systemctl boundaries. Passing fixtures does not validate production LDAP, systemd integration, Nginx/Apache, ACL preservation or a server upgrade.
 
 Public packaging replaces deployment-specific example domains with `example.org`; screenshots retain clearly labelled synthetic fixture addresses. The original release validation record is in `docs/VALIDATION-1.4.0.txt`; public-copy checks are recorded separately in `docs/PUBLICATION_CHECKS.md`.
 

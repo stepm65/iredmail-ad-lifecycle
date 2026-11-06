@@ -1,3 +1,9 @@
+# Настройки через веб / Web settings — core 1.5.0, console 0.5.0
+
+Новая установка: `sudo bash install.sh` из корня проекта, затем раздел «Настройки». Существующая установка: `sudo bash upgrade.sh`.
+
+See [SETTINGS.md](../docs/SETTINGS.md) for configuration, migration and recovery. The instructions below also retain older CLI workflows for reference.
+
 # Массовое удаление / Batch deletion — core 1.4.0, console 0.4.0
 
 RU: Добавлены выбор галочками, выбор всех показанных подходящих, общий preview,

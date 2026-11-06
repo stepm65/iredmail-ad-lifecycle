@@ -1,2 +1,3 @@
+Current 1.5.0 validation: ../docs/VALIDATION-1.5.0.md
 Original release fixture record: ../docs/VALIDATION-1.4.0.txt
 Public-copy checks: ../docs/PUBLICATION_CHECKS.md

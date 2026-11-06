@@ -1,3 +1,7 @@
+# 1.5.0 — Web-managed settings / Настройки через веб
+
+Managed overrides, shared configuration lock and interrupted-save guard. Existing mailbox processing policy is unchanged. See [release changes](../CHANGELOG.md) and [settings RU/EN](../docs/SETTINGS.md).
+
 # 1.4.0 — Explicit reviewed batch deletion / Явное пакетное удаление
 
 - Checkbox/CSV/TXT cohort only; new root count/percent guards. No automatic deletion.

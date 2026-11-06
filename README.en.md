@@ -2,14 +2,15 @@
 
 **AD-aware mailbox lifecycle management for iRedMail with a web console.**
 
-[Русский](README.md) · [Installation and upgrade](docs/INSTALL.md) · [Configuration RU/EN](core/iredmail-ad-lifecycle.conf) · [AGPL-3.0](LICENSE)
+[Русский](README.md) · [Installation and upgrade](docs/INSTALL.md) · [Settings RU/EN](docs/SETTINGS.md) · [AGPL-3.0](LICENSE)
 
-**Core 1.4.0 / console 0.4.0.** Bash and Python, with Flask/Gunicorn behind an existing HTTPS Nginx or Apache site. The console UI is Russian; documentation is available in Russian and English. This manages an existing AD-backed iRedMail installation; it does not install a mail server or Active Directory.
+**Core 1.5.0 / console 0.5.0.** Bash and Python, with Flask/Gunicorn behind an existing HTTPS Nginx or Apache site. The console UI is Russian; documentation is available in Russian and English. This manages an existing AD-backed iRedMail installation; it does not install a mail server or Active Directory.
 
-![Reviewed mailbox selection using demo data](docs/screenshots/selection.png)
+![Web settings using demo data](docs/screenshots/settings.jpg)
 
 ## Features
 
+- Web settings for AD, credentials, domains, storage, limits and the timer, with configuration backups and restore.
 - Mailbox reports with AD state, HR status, address conflicts and exclusions.
 - Automatic archival only for a unique primary address, disabled AD account and `extensionAttribute6=0`, subject to configured delays and safety checks.
 - Legacy inventory of AD-missing mailboxes: CSV, size, latest filesystem activity, inactivity age, explicit approval and broad-base AD rechecks.
@@ -39,18 +40,12 @@ Target environment: Ubuntu 22.04/24.04, Python 3.10+, systemd and an existing AD
 ```bash
 git clone https://github.com/stepm65/iredmail-ad-lifecycle.git
 cd iredmail-ad-lifecycle
-sudo apt-get install ldap-utils rsync util-linux python3 python3-venv coreutils
-sudo bash core/install.sh
+sudo bash install.sh
 ```
 
-Edit `/etc/iredmail-ad-lifecycle.conf`, replacing example LDAP settings, domains, search bases and storage paths. Create the LDAP password file with mode `0600`. Keep `DRY_RUN=1`, then review:
+The installer asks for the HTTPS URL, server/CNAME target and console password. Then open **Настройки** (Settings) to configure AD, its service password, domains, storage, retention and limits. Test the connection, save and generate a report. Routine setup no longer requires editing files in the terminal. Enable the timer separately in the admin page.
 
-```bash
-sudo /usr/local/sbin/iredmail-ad-lifecycle --normal --report
-sudo bash console/install-web.sh
-```
-
-The console installer asks for its public HTTPS URL, server hostname and local console password. An existing certificate must cover the public hostname. The core timer is not enabled automatically. See [installation instructions](docs/INSTALL.md) before enabling writes.
+The existing HTTPS certificate must cover the public name. [Installation/upgrade](docs/INSTALL.md) · [Web settings, backups and restore](docs/SETTINGS.md).
 
 For an existing installation, run `sudo bash upgrade.sh` from the repository root after queued jobs finish. Settings, password/URL, state, exclusions and archives are preserved.
 
@@ -76,7 +71,7 @@ The 0.4.0 screenshot's “25% хранилища” label refers to mailbox **co
 
 ## Validation and scope
 
-The original batch release passed 34 new cases and reran 85 existing cases on temporary fixture data and mocked LDAP boundaries. This is not certification of all iRedMail deployments. Actual Ubuntu/AD, Linux removal, ownership/ACLs, systemd, HTTPS and upgrades need deployment validation. See the [release validation record](docs/VALIDATION-1.4.0.txt) and [contributor notes](CONTRIBUTING.md).
+The new release tests settings, rollback, the Unix broker and locks alongside existing processing cases on temporary mailbox fixtures. [1.5.0 validation](docs/VALIDATION-1.5.0.md) · [GitHub Actions](https://github.com/stepm65/iredmail-ad-lifecycle/actions). LDAP is mocked; real AD, HTTPS, archive mounts and mail-host upgrades require deployment validation.
 
 Licensed under [AGPL-3.0](LICENSE). This project is not an official iRedMail component.
 
@@ -84,4 +79,4 @@ Licensed under [AGPL-3.0](LICENSE). This project is not an official iRedMail com
 
 Copyright (c) 2026, rslpro. This publication is licensed under **GNU AGPL version 3 only** (`AGPL-3.0-only`); see [LICENSE](LICENSE) and [NOTICE](NOTICE). Distribution of derivative versions must comply with the AGPL source requirements. A modified version supporting remote network interaction must offer its corresponding source to users interacting with it remotely. Commercial use is permitted.
 
-Please send improvements as pull requests to this repository; see [CONTRIBUTING.md](CONTRIBUTING.md). Sending a pull request is voluntary, not an additional license condition or copyright assignment. The publication tag is `v1.4.0-agpl`; core/console versions remain 1.4.0/0.4.0. Previously granted BSD permissions remain valid. See [licensing and validation notes](docs/LICENSING.md).
+Please send improvements as pull requests to this repository; see [CONTRIBUTING.md](CONTRIBUTING.md). Sending a pull request is voluntary, not an additional license condition or copyright assignment. Current release: `v1.5.0`, core/console 1.5.0/0.5.0. Previously granted BSD permissions remain valid. See [licensing and validation notes](docs/LICENSING.md).
