@@ -57,7 +57,9 @@ class ServiceTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.root=Path(self.tmp.name)
         self.settings=self.root/'settings.json'
-        self.base=self.root/'core.conf';self.base.write_bytes(TEMPLATE.read_bytes())
+        self.base=self.root/'core.conf'
+        self.base_bytes=TEMPLATE.read_text(encoding='utf-8').replace('/root/.ldap-vmail.pass',(self.root/'ldap-password.pass').as_posix()).encode()
+        self.base.write_bytes(self.base_bytes)
         for name in ('jobs','inbox'):(self.root/name).mkdir()
         self.config=dict(core_config=str(self.base),jobs=str(self.root/'jobs'),inbox=str(self.root/'inbox'),
                          helper=str(TEMPLATE.parent/'legacy.py'),password_hash=generate_password_hash('console-password',method='pbkdf2:sha256:1000'),
@@ -82,13 +84,13 @@ class ServiceTests(unittest.TestCase):
         self.assertNotIn(self.config['secret'],text)
         self.assertNotIn('password_hash',text)
         self.assertNotIn('console-password',text)
-        self.assertEqual(self.base.read_bytes(),TEMPLATE.read_bytes())
+        self.assertEqual(self.base.read_bytes(),self.base_bytes)
 
     def test_save_creates_backup_preserves_base_and_rotates_revision(self):
         before=self.settings.read_bytes()
         output=self.save(values=dict(self.form,MANUAL_DELETE_MAX_COUNT='30'))
         self.assertTrue(output['saved']);self.assertFalse(self.manager.pending.exists())
-        self.assertEqual(self.base.read_bytes(),TEMPLATE.read_bytes())
+        self.assertEqual(self.base.read_bytes(),self.base_bytes)
         self.assertEqual(M.parse(self.manager.override.read_text())['MANUAL_DELETE_MAX_COUNT'],'30')
         backup=read_json(self.manager.history/(output['backup']+'.json'))
         self.assertEqual(backup['settings'].encode(),before)
