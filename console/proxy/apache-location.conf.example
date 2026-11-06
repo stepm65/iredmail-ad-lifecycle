@@ -1,0 +1,17 @@
+# Inside existing <VirtualHost *:443>; requires proxy, proxy_http and headers.
+# Внутри существующего HTTPS VirtualHost; нужны proxy, proxy_http, headers.
+ProxyRequests Off
+ProxyPreserveHost On
+ProxyAddHeaders Off
+RedirectMatch 301 ^/lifecycle$ /lifecycle/
+ProxyPass /lifecycle/ http://127.0.0.1:8127/
+ProxyPassReverse /lifecycle/ http://127.0.0.1:8127/
+<Location /lifecycle/>
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Prefix "/lifecycle"
+    RequestHeader set X-Forwarded-For "expr=%{REMOTE_ADDR}"
+    RequestHeader unset X-Forwarded-Host
+    LimitRequestBody 65536
+    # Optional actual management subnet / Реальная подсеть администраторов:
+    # Require ip 192.0.2.0/24
+</Location>

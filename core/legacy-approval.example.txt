@@ -1,0 +1,3 @@
+# RU: Один ЯВНО одобренный email на строку. Замените пример, затем раскомментируйте.
+# EN: One EXPLICITLY approved email per line. Replace the example, then uncomment.
+# reviewed.departed.user@example.org

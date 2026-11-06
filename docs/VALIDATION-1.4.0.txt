@@ -1,0 +1,47 @@
+iRedMail lifecycle 1.4.0 / web console 0.4.0 — 2026-10-07
+Validation / Проверка
+
+PASS: 34 NEW distinct batch cases: 15 core, 18 web/protocol, 1 Bash CLI case.
+PASS: 85 existing cases rerun: 14 single delete, 19 restore/protection, 33 console,
+16 password/admin, 2 normal policy, 1 existing single-delete CLI. Repeats excluded.
+PASS: 242 distinct cases across this release and retained baseline evidence:
+63 legacy + 25 normal/management CLI + 19 restore/protection + 14 single delete
++ 15 core batch + 33 console + 16 admin/password + 18 web batch + 39 connector.
+Full previous normal suite (22) and 2 single-delete CLI cases are retained;
+new CLI routing/report/live and affected normal policies passed in this release.
+Legacy semantics are unchanged apart from VERSION; connector bytes unchanged.
+
+Batch coverage: exact cohort, protected/changed member cancelling entire preflight,
+AD/data/new exclusion changes after first deletion stopping remaining members,
+count/percentage/current-limit guards, empty/duplicate approvals, dry run, exact
+count and writers acknowledgment, path tampering, preservation of other mailboxes,
+AD/archives, interruption after confirmed deletion, immutable approval/preview,
+reauthentication, single use, separate permission, secret/path field rejection,
+invalid result rejection, partial/timeout/restart progress and no automatic replay.
+
+PASS: Python syntax against 3.10 grammar; Bash scripts/config/combined upgrade
+syntax; JavaScript node syntax check. ZIP/TAR member names, Unix modes, bytes,
+manifest and archive SHA256 verified.
+PASS: Browser using actual rendered demo templates: select all excludes protected,
+status filter, clear, visible-only select, hidden selected count and button state;
+confirmation exact list and partial-result display. Screenshots include demo banner.
+
+Actual platform: Windows with Python 3.12.14 then local temporary Python 3.12.10,
+Flask 3.1.3, Bash 5.2. The bundled Python executable became unavailable mid-run;
+affected tests were rerun using a verified official embeddable distribution in
+the workspace, which is not included in the release or installed on the mailserver.
+Real fixture trees/snapshots/queues/sessions; mock AD/rsync/core boundaries.
+Windows CLI fixture alone substitutes LDAP process execution because native
+Python cannot execute MSYS shebang stubs. Fixture copy.py renamed to prevent
+shadowing the stdlib copy module; production deletion code has no bypass.
+Deletion tests remove only temporary workspace trees. Windows uses non-overwriting
+rename; Linux renameat2/fd-based rmtree, POSIX ownership/ACL/xattrs, actual Ubuntu
+22.04/24.04, AD, systemd/Unix password broker, Gunicorn/Nginx/Apache and combined
+upgrade/rollback have NOT been executed against the actual server.
+Limits are root config options, not automatic deletion policy. No AD objects deleted.
+
+RU: 34 новых проверки и 85 прежних повторных проверок прошли. Всего 242 отдельных
+сценария с сохранёнными результатами базовой версии; повторы не считаются дважды.
+Все почтовые данные в тестах демонстрационные. Реальный сервер не подключался.
+Сначала проверьте отчёт и preview на сервере; новые функции Ubuntu/AD требуют
+проверки развёртывания. Базовые AD/UPN правила и исправление HTTPS сохранены.

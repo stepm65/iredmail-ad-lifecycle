@@ -1,0 +1,47 @@
+# =============================================================================
+# Postfix LDAP recipient filter example
+# Пример LDAP-фильтра получателей Postfix
+# =============================================================================
+#
+# Цель: перестать принимать новую почту ТОЛЬКО для сотрудников, которые:
+#   1) отключены в AD
+#   2) extensionAttribute6=0 (Уволен)
+#
+# Goal: stop accepting new mail ONLY for users who are:
+#   1) disabled in AD
+#   2) extensionAttribute6=0 (Terminated)
+#
+# Это НЕ блокирует доставку сотрудникам в отпуске/больничном и т.п.,
+# если их учётная запись отключена, но extensionAttribute6=1..8.
+#
+# This does NOT block delivery to employees on leave/sick leave/etc.
+# when the AD account is disabled but extensionAttribute6=1..8.
+#
+# For a typical /etc/postfix/ad_virtual_mailbox_maps.cf:
+#
+# OLD / СТАРЫЙ:
+# query_filter = (&(objectClass=person)(userPrincipalName=%s))
+#
+# NEW / НОВЫЙ:
+query_filter = (&(objectClass=person)(userPrincipalName=%s)(!(&(userAccountControl:1.2.840.113556.1.4.803:=2)(extensionAttribute6=0))))
+
+# Проверка перед postfix reload:
+# Test BEFORE postfix reload:
+#
+# Active employee should return Maildir:
+#   postmap -q active.user@example.org ldap:/etc/postfix/ad_virtual_mailbox_maps.cf
+#
+# Disabled + extensionAttribute6=2 should ALSO return Maildir:
+#   postmap -q leave.user@example.org ldap:/etc/postfix/ad_virtual_mailbox_maps.cf
+#
+# Disabled + extensionAttribute6=0 should return EMPTY:
+#   postmap -q fired.user@example.org ldap:/etc/postfix/ad_virtual_mailbox_maps.cf
+#
+# Only after successful tests:
+# Только после успешных тестов:
+#
+#   postfix reload
+#
+# IMPORTANT / ВАЖНО:
+# Keep a backup of the original Postfix LDAP file.
+# Сохраните резервную копию исходного LDAP-файла Postfix.

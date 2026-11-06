@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<div class="login-wrap"><div class="eyebrow">{{ error.code }}</div><h1>Запрос не выполнен</h1><p>{{ error.description }}</p><a href="{{ url_for('dashboard') }}">Вернуться в консоль →</a></div>{% endblock %}

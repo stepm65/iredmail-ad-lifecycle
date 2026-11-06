@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Почтовые ящики · Lifecycle{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='console.css') }}">
+<script defer src="{{ url_for('static', filename='console.js') }}"></script></head>
+<body><aside class="sidebar"><a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-mark">L</span>Lifecycle</a>
+<div class="sidebar-label">УПРАВЛЕНИЕ ПОЧТОЙ</div><a class="nav-item" href="{{ url_for('dashboard') }}">Почтовые ящики</a>
+<a class="nav-item" href="{{ url_for('archives_page') }}">Архивы и восстановление</a>
+<a class="nav-item" href="{{ url_for('delete_selection') }}">Массовое удаление</a>
+<a class="nav-item" href="{{ url_for('exclusions_page') }}">Исключения</a>
+<a class="nav-item" href="{{ url_for('account') }}">Пароль консоли</a>
+<div class="sidebar-note"><span class="dot"></span>iRedMail + Active Directory<br><small>Источник адреса — рабочий конфиг lifecycle</small></div>
+<div class="sidebar-bottom">Веб-консоль 0.4.0<br><small>Дополнение к lifecycle 1.4.0</small></div></aside>
+<div class="workspace"><header><span>Почтовая инфраструктура</span>{% if username %}<div class="user">{{ username }}<form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf() }}"><button class="link-button">Выйти</button></form></div>{% endif %}</header>
+<main>{% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}">{{ message }}</div>{% endfor %}
+{% block content %}{% endblock %}</main><footer>Правила AD и лимиты берутся из установленного lifecycle. Консоль не меняет SOGo и кадровые статусы.<br>© 2026 rslpro · <a href="https://github.com/stepm65/iredmail-ad-lifecycle/tree/v1.4.0-agpl/LICENSE">AGPL-3.0</a> · <a href="https://github.com/stepm65/iredmail-ad-lifecycle/tree/v1.4.0-agpl">Исходный код</a> · Без гарантий; распространение по условиям лицензии.</footer></div></body></html>

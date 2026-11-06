@@ -1,0 +1,2 @@
+Original release fixture record: ../docs/VALIDATION-1.4.0.txt
+Public-copy checks: ../docs/PUBLICATION_CHECKS.md

@@ -1,0 +1,32 @@
+[Unit]
+Description=iRedMail Lifecycle console job worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=root
+Group=lc-web
+WorkingDirectory=/opt/iredmail-lifecycle-web
+ExecStart=/usr/bin/python3 /opt/iredmail-lifecycle-web/worker.py
+Restart=on-failure
+KillMode=control-group
+TimeoutStopSec=20
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/etc/iredmail-lifecycle-web
+RuntimeDirectory=iredmail-lifecycle-web
+RuntimeDirectoryMode=0750
+# Bind password may be in /root; mailbox/archive paths follow the core config.
+# Пароль bind может быть в /root; пути ящиков/архивов берутся из основного конфига.
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+[Install]
+WantedBy=multi-user.target

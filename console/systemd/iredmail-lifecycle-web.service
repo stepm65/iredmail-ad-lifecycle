@@ -1,0 +1,25 @@
+[Unit]
+Description=iRedMail Lifecycle web console (unprivileged)
+After=network.target
+
+[Service]
+User=lc-web
+Group=lc-web
+WorkingDirectory=/opt/iredmail-lifecycle-web
+Environment=LIFECYCLE_WEB_CONFIG=/etc/iredmail-lifecycle-web/settings.json
+ExecStart=/opt/iredmail-lifecycle-web/venv/bin/gunicorn --workers 1 --threads 4 --bind 127.0.0.1:8127 --access-logfile - --error-logfile - app:create_app()
+Restart=on-failure
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/iredmail-lifecycle-web/inbox /var/lib/iredmail-lifecycle-web/web
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

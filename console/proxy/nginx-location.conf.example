@@ -1,0 +1,17 @@
+# Add INSIDE your existing HTTPS server{}; do not replace the iRedMail site.
+# Добавить ВНУТРЬ существующего server{} HTTPS; не заменять сайт iRedMail.
+# If you change /lifecycle/, change configure.py --url and both prefix lines too.
+location = /lifecycle { return 301 /lifecycle/; }
+location ^~ /lifecycle/ {
+    proxy_pass http://127.0.0.1:8127/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Prefix /lifecycle;
+    proxy_set_header X-Forwarded-Host "";
+    client_max_body_size 64k;
+    proxy_read_timeout 60s;
+    # Optional: restrict access to your actual management subnet.
+    # allow 192.0.2.0/24;
+    # deny all;
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=iRedMail AD mailbox lifecycle manager
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Always enforce normal policy even if an operator leaves LEGACY_MODE=1.
+# Всегда штатная политика, даже если оператор оставил LEGACY_MODE=1.
+ExecStart=/usr/local/sbin/iredmail-ad-lifecycle --normal
+User=root
+Group=root
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
